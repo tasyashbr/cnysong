@@ -185,7 +185,7 @@ async function runLoad(track, key) {
     if (key !== currentKey) return;
     lastLyrics = { key, status: 'error', message: e.message };
     send('lyrics:update', lastLyrics);
-    setTimeout(() => { if (currentKey === key) currentKey = null; }, 5000); // coba lagi otomatis
+    setTimeout(() => { if (currentKey === key) currentKey = null; }, 5000); // retry automatically
     return;
   }
   if (key !== currentKey) return;
@@ -215,7 +215,7 @@ async function runLoad(track, key) {
     lastLyrics = { key, status: 'ok', ...full };
     send('lyrics:update', lastLyrics);
   } catch (e) {
-    console.error('[lyrics] romanize failed:', e.message); // lirik asli tetap tampil
+    console.error('[lyrics] romanize failed:', e.message); // original lyrics displayed
   }
 }
 
