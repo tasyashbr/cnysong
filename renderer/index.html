@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+  <title>CnySong</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="card">
+    <header id="bar">
+      <div id="meta"><span id="title">CnySong</span><span id="artist"></span></div>
+      <div id="tools">
+        <button id="btnMode" title="Switch between original, romanized and both" hidden>Original</button>
+        <button id="btnEarlier" title="Show lyrics earlier">&minus;</button>
+        <span id="offset" title="Sync offset">0.0s</span>
+        <button id="btnLater" title="Show lyrics later">+</button>
+        <button id="btnSmaller" title="Smaller text">A&minus;</button>
+        <button id="btnBigger" title="Bigger text">A+</button>
+        <button id="btnPin" title="Keep on top of other windows">Pinned</button>
+        <button id="btnHide" title="Hide (the tray icon brings it back)">&times;</button>
+      </div>
+    </header>
+
+    <main id="stage">
+      <div id="lines"></div>
+      <p id="notice" hidden></p>
+    </main>
+
+    <section id="setup" hidden>
+      <h2>Connect Spotify</h2>
+      <ol>
+        <li>Open <b>developer.spotify.com/dashboard</b> and create an app.</li>
+        <li>Add this Redirect URI: <code id="redirect"></code></li>
+        <li>Paste the app's Client ID here:</li>
+      </ol>
+      <div id="setupRow">
+        <input id="clientId" type="text" spellcheck="false" placeholder="Client ID" autocomplete="off">
+        <button id="btnConnect">Connect</button>
+      </div>
+      <p id="setupMsg"></p>
+      <p id="macHint" hidden>On a Mac you can skip this: tray menu, Source, Spotify app.</p>
+      <button id="btnCloseSetup" class="link">Close</button>
+    </section>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
