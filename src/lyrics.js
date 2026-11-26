@@ -1,4 +1,4 @@
-// Fetches time-synced lyrics from LRCLIB (https://lrclib.net), free and no API key.
+// Fetches time-synced lyrics from LRCLIB (https://lrclib.net), free.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');

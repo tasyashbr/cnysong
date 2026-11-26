@@ -1,6 +1,6 @@
 {
   "name": "cnysong",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Floating, pinnable synced-lyrics window with romanization for Spotify",
   "main": "main.js",
   "author": "Tasha",
@@ -26,14 +26,33 @@
   "build": {
     "appId": "com.example.cnysong",
     "productName": "CnySong",
-    "directories": { "output": "dist" },
-    "files": ["**/*", "!test/**", "!scripts/**", "!dist/**", "!.github/**", "!*.md"],
-    "asarUnpack": ["node_modules/kuromoji/dict/**"],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!test/**",
+      "!scripts/**",
+      "!dist/**",
+      "!.github/**",
+      "!*.md"
+    ],
+    "asarUnpack": [
+      "node_modules/kuromoji/dict/**"
+    ],
     "mac": {
       "category": "public.app-category.music",
       "icon": "assets/icon.png",
       "identity": null,
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "extendInfo": {
         "LSUIElement": true,
         "NSAppleEventsUsageDescription": "CnySong reads the current track and playback position from the Spotify app."
@@ -41,7 +60,14 @@
     },
     "win": {
       "icon": "assets/icon.png",
-      "target": [{ "target": "nsis", "arch": ["x64"] }]
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     }
   }
 }
