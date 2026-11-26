@@ -14,7 +14,7 @@ function init(dir) {
 }
 
 function cacheFile(track) {
-  const key = [track.artist, track.title, Math.round(track.durationMs / 1000)].join('|').toLowerCase();
+  const key = ['v3', track.artist, track.title, Math.round(track.durationMs / 1000)].join('|').toLowerCase();
   return path.join(cacheDir, crypto.createHash('sha1').update(key).digest('hex') + '.json');
 }
 function readCache(track) {
@@ -59,8 +59,8 @@ function firstArtist(artist) {
   return artist.split(/,|&| x | feat\.?| ft\.?/i)[0].trim();
 }
 
-async function getJson(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+async function getJson(url, ms = 8000) {
+  const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(ms) });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('LRCLIB HTTP ' + res.status);
   return res.json();
@@ -103,6 +103,30 @@ async function fetchRemote(track) {
   return null;
 }
 
+const NON_LATIN = /[^\u0000-\u024f\u1e00-\u1eff\s\d\p{P}\p{S}]/u;
+
+// share of non-empty lines that contain non-Latin letters (0 to 1)
+function nonLatinShare(lines) {
+  const texts = lines.filter((l) => l.text);
+  if (!texts.length) return 0;
+  return texts.filter((l) => NON_LATIN.test(l.text)).length / texts.length;
+}
+
+// Some LRCLIB entries are already typed in Latin letters (for example romanized K-pop).
+// Look for another entry of the same song that keeps the original script.
+async function findOriginalScript(track) {
+  const dur = Math.round(track.durationMs / 1000);
+  const q = new URLSearchParams({ track_name: cleanTitle(track.title), artist_name: firstArtist(track.artist) });
+  const list = (await getJson(`${BASE}/search?${q}`, 4000)) || [];
+  const found = list
+    .filter((r) => !r.instrumental && r.syncedLyrics && Math.abs((r.duration || 0) - dur) <= 4)
+    .map((r) => ({ r, res: toResult(r) }))
+    .filter((x) => x.res && nonLatinShare(x.res.lines) >= 0.2)
+    .sort((a, b) => Math.abs(a.r.duration - dur) - Math.abs(b.r.duration - dur));
+  if (found.length) console.log('[lyrics] original-script version found for', track.title);
+  return found.length ? found[0].res : null;
+}
+
 // Returns { synced, lines } or null. Hits are cached forever, misses for 7 days.
 async function get(track) {
   const cached = readCache(track);
@@ -110,7 +134,10 @@ async function get(track) {
     if (cached.data) return cached.data;
     if (cached.miss && Date.now() - cached.miss < MISS_TTL) return null;
   }
-  const data = await fetchRemote(track);
+  let data = await fetchRemote(track);
+  if (data && data.synced && nonLatinShare(data.lines) < 0.2) {
+    try { data = (await findOriginalScript(track)) || data; } catch (_) { /* keep what we have */ }
+  }
   writeCache(track, data ? { data } : { miss: Date.now() });
   return data;
 }

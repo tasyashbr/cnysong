@@ -23,6 +23,7 @@ function getKuroshiro() {
     await kuroshiro.init(new KuromojiAnalyzer({ dictPath }));
     return kuroshiro;
   })();
+  kuroshiroReady.catch(() => { kuroshiroReady = null; }); // retry if failed
   return kuroshiroReady;
 }
 
@@ -58,6 +59,7 @@ async function romanizeLines(lines) {
   const all = lines.map((l) => l.text).join('\n');
   const songHasKana = RE.kana.test(all);
   let any = false;
+  let failed = false;
 
   const out = [];
   for (const l of lines) {
@@ -69,11 +71,15 @@ async function romanizeLines(lines) {
       else if (RE.hangul.test(text)) rom = korean(text);
       else if (RE.han.test(text)) rom = chinese(text);
       else rom = generic(text);
-    } catch (_) { rom = null; }
+    } catch (e) {
+      rom = null;
+      if (!failed) console.error('[romanize] failed:', e.message);
+      failed = true;
+    }
     if (rom) { rom = tidy(rom); any = true; }
     out.push({ ...l, rom });
   }
-  return { lines: out, hasRomanization: any };
+  return { lines: out, hasRomanization: any, failed };
 }
 
 module.exports = { romanizeLines };

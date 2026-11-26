@@ -16,6 +16,7 @@ let setupManual = false;
 
 const MODES = ['original', 'romanized', 'both'];
 const MODE_LABEL = { original: 'Original', romanized: 'Romanized', both: 'Both' };
+const hasRom = (l) => !!(l && l.status === 'ok' && l.lines && l.lines.some((x) => x.rom));
 
 /* ---------- clock ---------- */
 
@@ -171,9 +172,16 @@ window.api.onPlayer((s) => {
 });
 
 window.api.onLyrics((l) => {
+  // update from the same song (if romanization has just finished): keep the line position and scroll
+  const refresh = !!(lyrics && l && lyrics.key === l.key && lyrics.status === 'ok' && l.status === 'ok');
+  const scroll = els.stage.scrollTop;
   lyrics = l;
-  els.btnMode.hidden = !(l && l.status === 'ok' && l.hasRomanization);
+  els.btnMode.hidden = !hasRom(l);
   buildLines();
+  if (refresh) {
+    els.stage.scrollTop = scroll;
+    if (l.synced) setActive(findIdx(l.lines, now() + (S ? S.offsetMs : 0)));
+  }
   syncNotice();
 });
 
@@ -216,7 +224,7 @@ window.addEventListener('resize', placeLines);
   state = init.player || state;
   lyrics = init.lyrics;
   if (state.track) { setMeta(state.track); base = { pos: state.positionMs, at: state.at, playing: state.status === 'playing', trackId: state.track.id }; }
-  els.btnMode.hidden = !(lyrics && lyrics.status === 'ok' && lyrics.hasRomanization);
+  els.btnMode.hidden = !hasRom(lyrics);
   buildLines();
   syncNotice();
   requestAnimationFrame(frame);

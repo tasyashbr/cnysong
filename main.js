@@ -163,25 +163,60 @@ function onState(s) {
   }
 }
 
-async function loadLyrics(track, key) {
+const withTimeout = (p, ms, label) =>
+  Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(label + ' timeout')), ms))]);
+
+let loadTimer = null;
+
+function loadLyrics(track, key) {
+  clearTimeout(loadTimer);
   lastLyrics = { key, status: 'loading' };
   send('lyrics:update', lastLyrics);
+  loadTimer = setTimeout(() => runLoad(track, key), 400); // wait when skipping songs
+}
+
+async function runLoad(track, key) {
+  const t0 = Date.now();
+  const name = `${track.artist} - ${track.title}`;
+  let data;
   try {
-    let data = await lyrics.get(track);
-    if (key !== currentKey) return;
-    if (!data) { lastLyrics = { key, status: 'none' }; send('lyrics:update', lastLyrics); return; }
-    if (data.hasRomanization === undefined) {
-      const r = await romanizeLines(data.lines);
-      data = { ...data, lines: r.lines, hasRomanization: r.hasRomanization };
-      lyrics.save(track, data);
-    }
-    if (key !== currentKey) return;
-    lastLyrics = { key, status: 'ok', ...data };
+    data = await withTimeout(lyrics.get(track), 15000, 'LRCLIB');
   } catch (e) {
     if (key !== currentKey) return;
     lastLyrics = { key, status: 'error', message: e.message };
+    send('lyrics:update', lastLyrics);
+    setTimeout(() => { if (currentKey === key) currentKey = null; }, 5000); // coba lagi otomatis
+    return;
   }
+  if (key !== currentKey) return;
+  if (!data) {
+    lastLyrics = { key, status: 'none' };
+    send('lyrics:update', lastLyrics);
+    console.log(`[lyrics] ${name}: no lyrics found`);
+    return;
+  }
+
+  // Step 1: display now. Look for the lyrics entry.
+  const hasRom = data.lines.some((l) => l.rom);
+  lastLyrics = { key, status: 'ok', ...data, hasRomanization: hasRom };
   send('lyrics:update', lastLyrics);
+  console.log(`[lyrics] ${name}: shown in ${Date.now() - t0}ms (romanization ${hasRom ? 'from cache' : 'pending'})`);
+  if (hasRom) return;
+
+  // Step 2: romanization in the background, then update the display
+  try {
+    const r = await withTimeout(romanizeLines(data.lines), 20000, 'romanize');
+    const done = r.lines.filter((l) => l.rom).length;
+    console.log(`[lyrics] ${name}: romanized ${done} of ${r.lines.length} lines in ${Date.now() - t0}ms${r.failed ? ' (with errors)' : ''}`);
+    if (done === 0) return;
+    const full = { ...data, lines: r.lines, hasRomanization: true };
+    if (!r.failed) lyrics.save(track, full);
+    if (key !== currentKey) return;
+    lastLyrics = { key, status: 'ok', ...full };
+    send('lyrics:update', lastLyrics);
+  } catch (e) {
+    console.error('[lyrics] romanize failed:', e.message); // lirik asli tetap tampil
+  }
 }
 
 /* ---------- IPC ---------- */
