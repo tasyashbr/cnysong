@@ -7,8 +7,7 @@ if application "Spotify" is running then
   tell application "Spotify"
     if player state is stopped then return "stopped"
     set t to current track
-    set st to (player state as text)
-    return st & "\\t" & (id of t) & "\\t" & (name of t) & "\\t" & (artist of t) & "\\t" & (album of t) & "\\t" & (duration of t) & "\\t" & (player position)
+    return (player state as text) & "|||" & (id of t) & "|||" & (name of t) & "|||" & (artist of t) & "|||" & (album of t) & "|||" & (duration of t) & "|||" & (player position)
   end tell
 else
   return "closed"
@@ -16,7 +15,7 @@ end if`;
 
 function run() {
   return new Promise((resolve, reject) => {
-    execFile('osascript', ['-e', SCRIPT], { timeout: 4000 }, (err, stdout, stderr) => {
+    execFile('osascript', ['-e', SCRIPT], { timeout: 20000 }, (err, stdout, stderr) => {
       if (err) return reject(Object.assign(err, { stderr }));
       resolve(stdout.trim());
     });
@@ -29,12 +28,12 @@ async function read() {
   try { out = await run(); }
   catch (e) {
     if (/-1743|not allowed|not authorized/i.test(String(e.stderr || e.message))) return { status: 'permission' };
-    return { status: 'error', message: 'AppleScript failed' };
+    return { status: 'error', message: 'AppleScript: ' + String(e.stderr || e.message).split('\n')[0] };
   }
   const at = Date.now();
   if (out === 'closed' || out === 'stopped') return { status: 'idle' };
 
-  const [state, id, title, artist, album, dur, pos] = out.split('\t');
+  const [state, id, title, artist, album, dur, pos] = out.split('|||');
   const num = (s) => parseFloat(String(s).replace(',', '.'));
   return {
     status: state === 'playing' ? 'playing' : 'paused',
