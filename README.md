@@ -1,63 +1,94 @@
 # CnySong
 
-A small always-on-top window that shows **time-synced lyrics** for the song playing in Spotify,
-with a **romanized** toggle for Japanese, Korean, Chinese, Russian, Thai and other non-Latin scripts.
+A small always-on-top lyrics window for Spotify on macOS. Time-synced lyrics, with a romanized
+view for Japanese, Korean, Chinese, Russian, Thai and other non-Latin scripts.
 Pin it over your work, glance at it, sing along.
 
-- Synced lyrics from [LRCLIB](https://lrclib.net) (free, no key)
-- Original / Romanized / Both display
-- Always on top, also over full-screen apps on macOS
-- Click-through mode, adjustable size, font, opacity and sync offset
-- macOS only for now, Windows is planned
+## Download
 
-## Two ways to read what Spotify is playing
+Get the latest version from the [Releases page](https://github.com/tasyashbr/cnysong/releases/latest):
 
-| Source | Platform | Needs |
-|---|---|---|
-| **Spotify app** (AppleScript) | macOS | Nothing. macOS asks once to allow control of Spotify |
-| **Spotify Web API** | macOS | Your own Spotify developer app (free, owner needs Premium) |
+- **Apple Silicon** (M1, M2, M3, M4): `CnySong-1.0.0-arm64.dmg`
+- **Intel Mac**: `CnySong-1.0.0.dmg`
 
-Spotify limits a developer app in Development Mode to 5 authorized users, so each person uses
-their own Client ID. That is why the app asks you for it instead of shipping one.
+Not sure which one? Open the Apple menu, then About This Mac. If it says "Chip: Apple ...", pick the arm64 file.
 
-### Create your Client ID (Web API mode)
-1. Go to <https://developer.spotify.com/dashboard> and create an app, choose **Web API**.
-2. Add the Redirect URI `http://127.0.0.1:8888/callback`.
-3. Copy the Client ID, paste it in CnySong, press Connect.
+## Install
 
-## Run from source
+1. Open the `.dmg` and drag **CnySong** into **Applications**.
+2. CnySong is not signed by Apple, so the first launch needs one extra step:
+   - Open **Applications**, right-click **CnySong**, choose **Open**, then **Open** again.
+   - If macOS still blocks it, open **System Settings, Privacy & Security**, scroll down and click **Open Anyway**.
+   - If it says the app is "damaged", open Terminal and run:
+     `xattr -cr /Applications/CnySong.app`
+3. When macOS asks if CnySong may control Spotify, click **Allow**.
+
+## Use
+
+1. Open the **Spotify desktop app** and play a song. The web player is not supported.
+2. The lyrics window appears. CnySong has no Dock icon, look for its icon in the menu bar.
+3. Hover over the window to see the toolbar:
+   - Original, Romanized or Both (shown for songs with non-Latin lyrics)
+   - Sync offset, if lyrics feel a little early or late
+   - Text size
+   - Pin on or off
+4. Drag the top bar to move the window.
+
+The menu bar icon also has: show or hide the window, always on top, click-through,
+font size, background opacity and window size.
+
+## Troubleshooting
+
+- **"Allow CnySong to control Spotify"**: open System Settings, Privacy & Security, Automation, and turn on Spotify under CnySong.
+- **No lyrics found**: lyrics come from [LRCLIB](https://lrclib.net), a community database. Popular songs are usually there, newer or indie songs may not be.
+- **No Romanized button**: it only appears for songs with non-Latin lyrics. For a new song it can take a few seconds. Some LRCLIB entries are already typed in Latin letters, so there is nothing to convert.
+- **The window disappeared**: click the menu bar icon and choose Show lyrics. If click-through is on, turn it off from the same menu.
+- **Lyrics are slightly off**: use the `-` and `+` buttons in the toolbar.
+
+## Credits
+
+Lyrics from LRCLIB. Romanization by kuroshiro and kuromoji (Japanese), hangul-romanization (Korean),
+pinyin-pro (Chinese) and transliteration (other scripts). Romanization is automatic, so it is not
+always perfect, especially for kanji.
+
+Lyrics belong to their rights holders. CnySong only displays them for personal use.
+
+<details>
+<summary>For developers</summary>
+
+### Run from source
 ```bash
+git clone https://github.com/tasyashbr/cnysong.git
+cd cnysong
 npm install
-npm run icons   # optional, regenerates placeholder icons
 npm start
 ```
 Requires Node.js 22 or newer.
 
-## Build installers
+### Build the installer
 ```bash
-npm run dist:mac   # on a Mac: dist/*.dmg (arm64 and x64)
-```
-Push a tag like `v1.0.0` and GitHub Actions builds the macOS installer and attaches it to a Release.
-
-### Unsigned builds
-Builds are not signed. On macOS, right-click the app, choose Open, or run
-`xattr -cr /Applications/CnySong.app`.
-
-## Controls
-Hover the window to see the toolbar. Everything is also in the menu bar / tray icon.
-Drag the top bar to move the window. If click-through is on, turn it off from the tray menu.
-
-## How it works
-```
-Spotify app / Web API -> player.js (poll) -> main.js -> lyrics.js (LRCLIB) -> romanize.js
-                                               |
-                                               +-> renderer (own clock, 60fps highlight)
+npm run dist:mac    # dist/*.dmg, arm64 and x64
 ```
 
-## Credits
-LRCLIB for lyrics. kuroshiro + kuromoji (Japanese), hangul-romanization (Korean),
-pinyin-pro (Chinese), transliteration (other scripts).
-Lyrics belong to their rights holders. This app only displays them for personal use.
+### Release
+Push a tag like `v1.0.0`. GitHub Actions builds the macOS installer and attaches it to a Release.
+
+### How it works
+```
+Spotify app -> player.js (poll) -> main.js -> lyrics.js (LRCLIB) -> romanize.js
+                                      |
+                                      +-> renderer (own clock, 60fps highlight)
+```
+
+### Optional: Spotify Web API source
+The default source reads the Spotify app directly and needs no login. A Web API source also exists
+(tray menu, Source). It needs your own Spotify developer app with the redirect URI
+`http://127.0.0.1:8888/callback`, and the app owner needs Premium.
+
+Windows is not supported yet.
+
+</details>
 
 ## License
+
 MIT
